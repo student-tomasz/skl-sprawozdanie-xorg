@@ -1,0 +1,128 @@
+%\documentclass[a4paper]{scrartcl}
+\documentclass[a4paper]{article}
+\usepackage{setspace}
+\usepackage{url}
+\usepackage{mdwlist}
+\usepackage{polski}
+\usepackage[utf8x]{inputenc}
+\usepackage{color}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage[unicode=true]{hyperref}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{subfig}
+\usepackage{listings}
+\usepackage[backgroundcolor=white]{todonotes}
+\definecolor{dkgreen}{rgb}{0.2,0.8,0.2}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\bsd}{\textbf{FreeBSD}}
+\newcommand{\ssh}{\textbf{SSH}}
+\newcommand{\rdp}{\textbf{rdesktop}}
+\newcommand{\xbin}{\textbf{X}}
+\newcommand{\xvnc}{\textbf{Xvnc}}
+\newcommand{\wat}{\textbf{wat}}
+\newcommand{\volt}{\textbf{volt}}
+\lstset{ %
+  basicstyle=\ttfamily\footnotesize,
+  numbers=left,
+  numberstyle=\footnotesize,
+  stepnumber=1,
+  numbersep=5pt,
+  breaklines=true,
+  tabsize=2,
+  showspaces=false,
+  showstringspaces=false,
+  frame=single,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{mauve},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+}
+
+\begin{document}
+\begin{titlepage}
+
+  \begin{center}
+
+
+    % Upper part of the page
+    \includegraphics[width=0.3\textwidth]{logo.jpg}\\[1cm]
+
+    \begin{onehalfspace}
+      \textsc{\LARGE Wydział Elektryczny Politechniki Warszawskiej}\\[1.5cm]
+    \end{onehalfspace}
+
+
+
+    \textsc{Sieci Komputerowe Lab.}\\[0.5cm]
+
+    % Title
+    \HRule \\[0.4cm]
+    {\huge \bfseries Protokoły graficznych interfejsów użytkownika}\\[0.2cm]
+    \HRule \\[1.5cm]
+
+    % Author and supervisor
+    \begin{flushleft} \large
+      \emph{Autorzy:}\\
+      Barnaba \textsc{Turek}\\
+      \href{mailto:turekb@volt}{turekb@volt}\\
+      Tomasz \textsc{Cudziło}\\
+      \href{mailto:cudzilot@volt}{cudzilot@volt}\\
+    \end{flushleft}
+    \vfill
+
+    % Bottom of the page
+    {\large \today}
+
+  \end{center}
+
+\end{titlepage}
+\sloppy
+
+\setcounter{tocdepth}{4}
+\tableofcontents
+
+\section{Wstęp}
+\section{Cel ćwiczenia}
+Celem ćwiczenia było zapoznianie się z~systemami oprogramowania umożliwiającymi korzystanie z~graficznych interfejsów użytkownika poprzez sieć.
+\section{Badane protokoły i~systemy oprogramowania}
+Zapoznaliśmy się z~następującymi protokołami:
+\begin{description}
+  \item[X11] Protokół powstały dla systemów UN*X\dywiz owych, dostępny także na innych systemach. Korzystaliśmy z~programów \ssh, \xbin,
+    a~także różnych skryptów pozwalających wygodnie zarządzać uwierzytelnianiem klientów.
+  \item[RDP] Protokół wspierany przez systemy z~rodziny \emph{Windows}. Korzystaliśmy z~klienta \rdp, i~maszyny \wat{} jako serwera.
+  \item[VNC] Popularny protokół zdalnego dostępu. Korzystaliśmy z~\xvnc{} jako serwera, a~także z~klientów \textbf{tightVNC} i \textbf{Tiger VNC}.
+\end{description}
+
+\section{X11}
+\subsection{Schemat poglądowy}
+\subsection{Przygotowanie}
+\todo{Włączenie Xów, podmontowanie home}
+\subsection{Wybór ekranu dla klienta}
+\todo{To co ato mówił - że można poza zmienną DISPLAY. format zmiennej. Coś o~zmiennych środowiskowych}
+\subsection{Uwierzytelnianie}
+\subsubsection{Uwierzytelnianie za pomocą SSH}
+\todo{Nie mam pojęcia jak to działa}
+\subsubsection{Skrypt xauth-export}
+\todo{Jakaś trivia o~tym, jak to działa}
+\section{RDP}
+\todo{Tutaj możemy chyba dać tylko listing, warto wspomnieć o~haxopcjach linii komend których użyliśmy}
+\section{VNC}
+\todo{Warto zaznaczyć, że w~przeciwieństwie do windowsów nie łączymy się z~istniejącym ekranem, tylko dostajemy nowy. Że standardowo się forkuje i~trzeba go zabić etc.}
+
+\end{document}
+
+%fragmenty do copypastowania
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{asd.png}
+  \caption{}
+\end{figure}
+
+\begin{lstlisting}[caption=Przykład]
+  kod
+\end{lstlisting}
