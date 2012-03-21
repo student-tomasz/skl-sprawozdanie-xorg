@@ -98,16 +98,89 @@ Zapoznaliśmy się z~następującymi protokołami:
 \end{description}
 
 \section{X11}
-\subsection{Schemat poglądowy}
+\subsection{Opis rozwiązania}
+Serwer X organizuje komunikację pomiędzy klientami (programami, które chcą wyświetlać informacje na ekranach) a~sprzętem.
+Serwer przyjmuje polecenia rysowania elementów interfejsu od klientów i~w~wyniku tych poleceń rysuje elementy na ekranie, z~którym jest związany.
+
+Poza tym serwer obsługuje urządzenia wejściowe (takie jak klawiatury i~myszki) i~przesyła wygenerowane przez nie zdarzenia do klientów.
+
+Zastosowany model klienta\dywiz serwera pozwala więc na zdalne uruchamianie aplikacji graficznych.
+
+W~ramach ćwiczenia uruchomiliśmy serwer X na lokalnej maszynie (przyniesionym laptopie z~systemem Ubuntu lub maszynie laboratoryjnej).
+Następnie do uruchomionego serwera podłączaliśmy klientów (programy). Udało nam się uruchomić klientów graficznych z~maszyny \volt oraz przyniesionego laptopa.
+
 \subsection{Przygotowanie}
-\todo{Włączenie Xów, podmontowanie home}
-\subsection{Wybór ekranu dla klienta}
-\todo{To co ato mówił - że można poza zmienną DISPLAY. format zmiennej. Coś o~zmiennych środowiskowych}
-\subsection{Uwierzytelnianie}
-\subsubsection{Uwierzytelnianie za pomocą SSH}
-\todo{Nie mam pojęcia jak to działa}
-\subsubsection{Skrypt xauth-export}
-\todo{Jakaś trivia o~tym, jak to działa}
+Po zalogowaniu się na maszynie laboratoryjnej wykonaliśmy następujące polecenia:
+\todo{listing poleceń}
+
+Zamontowanie katalogu domowego, w~którym możemy tworzyć pliki jest niezbędne, jeśli chcemy skorzystać ze skryptu \textbf{startx}.
+Skrypt ten ustawia zmienną środowiskową \texttt{XAUTHORITY} na ścieżkę w katalogu domowym użytkownika (nawet gdyby nie ustawiał, jest to domyślna wartość przyjmowana przez serwer).
+
+\begin{lstlisting}[caption=fragment skryptu startx]
+    if [ x"$XAUTHORITY" = x ]; then
+        XAUTHORITY=$HOME/.Xauthority
+        export XAUTHORITY
+    fi
+\end{lstlisting}
+
+\subsubsection{Uruchomienie serwera X}
+Zgodnie ze stroną \texttt{man 7 X} plik wskazany przez tą zmienną zostanie użyty do zapisania klucza, pozwalającego uwierzytelnić klienta.
+
+W katalogu domowym jest także tworzony plik \texttt{.serverauth.*}, który jest wykorzystywany do przekazania klucza do serwera.
+
+\subsubsection{Uwierzytelnianie}
+Skrypt startx uruchamia serwer X korzystający z prostej metody uwierzytelniania klientów: \texttt{MIT-MAGIC-COOKIE-1}.
+Polega ona na tym, że zarówno klient jak i serwer znają to samo 16-sto bajtowe haslo, podawane serwerowi w czasie jego uruchomienia.
+Hasło jest pomiędzy nimi przekazywane za pomocą czystego tekstu (czyli możliwe do łatweo podsłuchania)
+\begin{lstlisting}[caption={ fragmenty skryptu startx generujące współdzielony klucz, zapisujące go w pliku i dodające ten plik do argumentów wywołania serwera X }]
+    if [ -r /dev/urandom ]; then
+        mcookie=`dd if=/dev/urandom bs=16 count=1 2>/dev/null | /usr/bin/hexdump -e \\"%08x\\"`
+    else
+        mcookie=`dd if=/dev/random bs=16 count=1 2>/dev/null | /usr/bin/hexdump -e \\"%08x\\"`
+    fi
+
+    [...]
+
+    dummy=0
+
+    # create a file with auth information for the server. ':0' is a dummy.
+    xserverauthfile=$HOME/.serverauth.$$
+    trap "rm -f '$xserverauthfile'" HUP INT QUIT ILL TRAP KILL BUS TERM
+    xauth -q -f "$xserverauthfile" << EOF
+add :$dummy . $mcookie
+EOF
+
+    serverargs=${serverargs}" -auth "${xserverauthfile}
+
+\end{lstlisting}
+
+Możliwe są także inne metody uwierzytelniania, opisane szczegółowo w \texttt{man 7 Xsecurity}, jednak nie zapoznaliśmy się z nimi bliżej.
+Niektóre z nich wyglądają na bezpieczniejsze.
+
+Po uruchomieniu serwera skorzystaliśmy ze skryptu \texttt{xauth-export}, który wywołuje polecenie \texttt{xauth}, wydobywa z niego klucz, a następnie wgrywa go na zadaną maszynę za pomocą protokołu \emph{SCP}.
+Wgraliśmy wygenerowany klucz na maszynę, na której uruchamialiśmy zdalnego klienta.
+
+Alternatywą do korzystanie z~tego skryptu byłoby skopiowanie wartości z~pliku wskazywanego przez zmienną \texttt{XAUTHORITY} i~wklejenie ich do odpowiedniego pliku na maszynie docelowej.
+Mogliśmy też uruchomić skrypt \texttt{home} bez argumentów, tak by katalog domowy został zamontowany z~maszyny \volt. Wtedy plik \texttt{~/.Xauthority} byłby dzielony pomiędzy maszynami.
+
+\subsubsection{Wybór serwera X dla klienta}
+
+Ostatnia czynność którą musieliśmy wykonać przed uruchomieniem klienta (już na zdalnej maszynie), to ustawienie zmiennej środowiskowej \texttt{DISPLAY}.
+Zmienna ta, wg. \texttt{man 7 X} określa, z~którego serwera Xów chcemy korzystać (serwer jest określony przez nazwę hosta i~numer, który przekłada się bezpośrednio na port, na który otwierane jest połączenie z~serwerem), oraz na którym ekranie chcemy wyświetlić naszego klienta.
+
+\texttt{Man 7 X} wspomina, że alternatywą do ustawiania zmiennej środowiskowej \texttt{DISPLAY} jest podanie programowi argumentu \texttt{-display}.
+Wiele programów nie obsługuje tego argumentu.
+
+\subsection{Alternatywa - \texttt{ssh -X}}
+Program \ssh{} posiada wbudowane rozwiązanie upraszczające proces, przez który przeszliśmy.
+
+Aby to rozwiązanie zadziałało, przed otwarciem połączenia \ssh{} powłoka, z~której otwieramy połączenie musi mieć poprawnie ustawione zmienne środowiskowe związane z~serwerem X
+(t.j. zmienną \texttt{DISPLAY} i~metodę uwierzytelniania na tym serwerze).
+
+Jeśli to założenie jest spełnione, to wykonanie polecenia \ssh z~opcją \texttt{-X} automatycznie ustawi na docelowym komputerze poprawną wartość zmiennej \texttt{DISPLAY} i~poprawną metodę uwierzytelniania (wraz z~kluczem).
+Na codzień korzystamy z~tej opcji do wygodnego drukowania plików PDF na serwerze \volt{} za pomocą programu \emph{evince}.
+W~czasie laboratorium nie sprawiła nam żadnych problemów
+
 \section{RDP}
 \todo{Tutaj możemy chyba dać tylko listing, warto wspomnieć o~haxopcjach linii komend których użyliśmy}
 \section{VNC}
