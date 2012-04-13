@@ -1,0 +1,202 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{sprawozdanie-ato}
+
+\begin{document}
+
+
+\begin{titlepage}
+  \begin{center}
+    % Upper part of the page
+    \includegraphics[width=0.3\textwidth]{logo.jpg}\\[1cm]
+    \begin{onehalfspace}
+      \textsc{\LARGE Politechnika Warszawska}\\[0.5cm]
+      \textsc{\Large Wydział Elektryczny}\\[1.5cm]
+    \end{onehalfspace}
+    \textsc{Sieci Komputerowe --- Laboratorium}\\[0.5cm]
+
+    % Title
+    \HRule \\[0.4cm]
+    {\huge \bfseries Protokoły graficznych interfejsów użytkownika}\\[0.2cm]
+    \HRule \\[1.5cm]
+
+    % Author and supervisor
+    \begin{flushleft} \large
+      \emph{Autorzy:}\\
+      Barnaba \textsc{Turek}\\
+      \href{mailto:turekb@volt}{turekb@volt}\\
+      Tomasz \textsc{Cudziło}\\
+      \href{mailto:cudzilot@volt}{cudzilot@volt}\\
+    \end{flushleft}
+    \vfill
+
+    % Bottom of the page
+    {\large \today}
+  \end{center}
+\end{titlepage}
+\sloppy
+
+
+\setcounter{tocdepth}{4}
+\tableofcontents
+
+
+\section{Wstęp}
+
+\subsection{Cel ćwiczenia}
+Celem ćwiczenia było zapoznanie się z~systemami oprogramowania umożliwiającymi
+korzystanie z~graficznych interfejsów użytkownika poprzez sieć.
+
+\subsection{Badane protokoły i~systemy oprogramowania}
+Zapoznaliśmy się z~następującymi protokołami:
+\begin{description}
+  \item[X11] Protokół powstały dla systemów UN*X\dywiz owych, dostępny także na
+    innych systemach. Korzystaliśmy z~programów \ssh, \xbin, a~także różnych
+    skryptów pozwalających wygodnie zarządzać uwierzytelnianiem klientów.
+  \item[RDP] Protokół wspierany przez systemy z~rodziny \emph{Windows}.
+    Korzystaliśmy z~klienta \rdp, i~maszyny \wat{} jako serwera.
+  \item[VNC] Popularny protokół zdalnego dostępu. Korzystaliśmy z~\xvnc{} jako
+    serwera, a~także z~klientów \textbf{tightVNC} i \textbf{Tiger VNC}.
+\end{description}
+
+
+\section{X11}
+
+\subsection{Opis rozwiązania}
+Serwer X organizuje komunikację pomiędzy klientami (programami, które chcą
+wyświetlać informacje na ekranach) a~sprzętem. Serwer przyjmuje polecenia
+rysowania elementów interfejsu od klientów i~w~wyniku tych poleceń rysuje
+elementy na ekranie, z~którym jest związany.
+
+Dodatkowo serwer obsługuje urządzenia wejściowe, takie jak klawiatury i~myszki.
+Zdarzenia wygenerowane przez te urządzenia przesyła do klientów.
+
+Zastosowany model klienta\dywiz serwera pozwala więc na zdalne uruchamianie
+aplikacji z interfejsem graficznych.
+
+W~ramach ćwiczenia uruchomiliśmy serwer \xbin{} na lokalnej maszynie
+(przyniesionym laptopie z~systemem Ubuntu lub maszynie laboratoryjnej).
+Następnie do uruchomionego serwera podłączaliśmy klientów (programy). Udało nam
+się uruchomić klientów graficznych z~maszyny \volt{} oraz własnego laptopa.
+
+\subsection{Przygotowanie}
+Po zalogowaniu się na maszynie laboratoryjnej wykonaliśmy następujące polecenia:
+
+\begin{lstlisting}
+home -r
+startx
+\end{lstlisting}
+
+Zamontowanie katalogu domowego, w~którym możemy tworzyć pliki jest niezbędne,
+jeśli chcemy skorzystać ze skryptu \texttt{startx}. Wykonuje to za nas skrypt
+\texttt{home}. Następnie skrypt \texttt{startx} ustawia zmienną środowiskową
+\texttt{XAUTHORITY} na ścieżkę w katalogu domowym użytkownika. Nie jest to
+niezbędna akcja, ponieważ jest to domyślna wartość przyjmowana przez serwer:
+
+\begin{lstlisting}
+if [ x"$XAUTHORITY" = x ]; then
+    XAUTHORITY=$HOME/.Xauthority
+    export XAUTHORITY
+fi
+\end{lstlisting}
+
+\subsubsection{Uruchomienie serwera X}
+Zgodnie ze stroną \texttt{man 7 X} plik wskazany przez zmienną
+\texttt{XAUTHORITY} zostanie użyty do zapisania klucza, pozwalającego
+uwierzytelnić klienta.
+
+W katalogu domowym jest także tworzony plik \texttt{.serverauth.*}, który jest
+wykorzystywany do przekazania klucza do serwera.
+
+\subsubsection{Uwierzytelnianie}
+Skrypt \texttt{startx} uruchamia serwer \xbin{} korzystający z prostej metody
+uwierzytelniania klientów: \texttt{MIT-MAGIC-COOKIE-1}.  Schemat wymiany hasła
+zakłada, że zarówno klient jak i serwer znają to samo 16\dywiz sto bajtowe
+hasło, podawane serwerowi w czasie jego uruchomienia. Hasło jest pomiędzy nimi
+przekazywane za pomocą czystego tekstu. Możliwe jest łatwe podsłuchanie łatwe
+przechwycenie hasła.
+
+Poniżej widoczny jest fragment skryptu \texttt{startx} gdzie generowany jest
+współdzielony klucz. Następnie zapisywany jest on do pliku, a ścieżka do pliku
+dodawana do argumentów wywołania serwera \xbin.
+
+\begin{lstlisting}
+if [ -r /dev/urandom ]; then
+    mcookie=`dd if=/dev/urandom bs=16 count=1 2>/dev/null | /usr/bin/hexdump -e \\"%08x\\"`
+else
+    mcookie=`dd if=/dev/random bs=16 count=1 2>/dev/null | /usr/bin/hexdump -e \\"%08x\\"`
+fi
+
+[...]
+
+dummy=0
+
+# create a file with auth information for the server. ':0' is a dummy.
+xserverauthfile=$HOME/.serverauth.$$
+trap "rm -f '$xserverauthfile'" HUP INT QUIT ILL TRAP KILL BUS TERM
+xauth -q -f "$xserverauthfile" << EOF
+add :$dummy . $mcookie
+EOF
+
+serverargs=${serverargs}" -auth "${xserverauthfile}
+\end{lstlisting}
+
+Możliwe są także inne metody uwierzytelniania, opisane szczegółowo w \texttt{man
+7 Xsecurity}, jednak nie zapoznaliśmy się z nimi bliżej. Niektóre z nich
+wyglądają na bezpieczniejsze.
+
+Po uruchomieniu serwera skorzystaliśmy ze skryptu \texttt{xauth-export}, który
+wywołuje polecenie \texttt{xauth}, wydobywa z niego klucz, a następnie wgrywa go
+na zadaną maszynę za pomocą protokołu \emph{SCP}. Wgraliśmy wygenerowany klucz
+na maszynę, na której uruchamialiśmy zdalnego klienta.
+
+Alternatywą do korzystanie z~tego skryptu byłoby skopiowanie wartości z~pliku
+wskazywanego przez zmienną \texttt{XAUTHORITY} i~wklejenie ich do odpowiedniego
+pliku na maszynie docelowej. Mogliśmy też uruchomić skrypt \texttt{home} bez
+argumentów, tak by katalog domowy został zamontowany z~maszyny \volt. Wtedy plik
+\texttt{~/.Xauthority} byłby dzielony pomiędzy maszynami.
+
+\subsubsection{Wybór serwera \xbin{} przez klienta}
+
+Ostatnia czynność, którą musieliśmy wykonać przed uruchomieniem klienta (już na
+zdalnej maszynie), to ustawienie zmiennej środowiskowej \texttt{DISPLAY}.
+Zmienna ta, wg. \texttt{man 7 X} określa, z~którego serwera \xbin ów chcemy
+korzystać. Serwer jest identyfikowany przez nazwę hosta i~numer, który przekłada
+się bezpośrednio na port, na który otwierane jest połączenie z~serwerem, oraz na
+którym ekranie chcemy wyświetlić naszego klienta.
+
+Przykładowo polecenie \texttt{export DISPLAY=volt:0.1} spowoduje, że klienci
+\xbin{} będą wyświetlani przez serwer na maszynie \texttt{volt}. Serwer \xbin{}
+będzie ich wyświetlał na wyświetlaczu lub grupie monitorów nr \texttt{0} i
+ekranie nr \texttt{1}.
+
+Treść \texttt{man 7 X} wspomina, że alternatywą do ustawiania zmiennej
+środowiskowej \texttt{DISPLAY} jest podanie klientowi \xbin argumentu
+\texttt{-display} z nazwą serwera jako argumentem. Wiele klientów nie obsługuje
+tej funkcjonalności.
+
+\subsection{Alternatywa --- \texttt{ssh \dywiz X}}
+Program \ssh{} posiada wbudowane rozwiązanie upraszczające proces, przez który
+przeszliśmy.
+
+Aby to rozwiązanie zadziałało, przed otwarciem połączenia \ssh{} powłoka,
+z~której otwieramy połączenie musi mieć poprawnie ustawione zmienne środowiskowe
+związane z~serwerem X (t.j. zmienną \texttt{DISPLAY} i~metodę uwierzytelniania
+na tym serwerze).
+
+Jeśli to założenie jest spełnione, to wykonanie polecenia \texttt{ssh} z~opcją
+\texttt{-X} automatycznie ustawi na docelowym komputerze poprawną wartość
+zmiennej \texttt{DISPLAY} i~poprawną metodę uwierzytelniania (wraz z~kluczem).
+Na codzień korzystamy z~tej opcji do wygodnego drukowania plików PDF na serwerze
+\volt{} za pomocą programu \emph{Evince}. W~czasie laboratorium nie sprawiła nam
+żadnych problemów.
+
+
+% \section{RDP}
+% \todo{Tutaj możemy chyba dać tylko listing, warto wspomnieć o~haxopcjach linii komend których użyliśmy}
+
+
+% \section{VNC}
+% \todo{Warto zaznaczyć, że w~przeciwieństwie do windowsów nie łączymy się z~istniejącym ekranem, tylko dostajemy nowy. Że standardowo się forkuje i~trzeba go zabić etc.}
+
+
+\end{document}

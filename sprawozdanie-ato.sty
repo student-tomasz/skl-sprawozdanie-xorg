@@ -1,0 +1,53 @@
+\ProvidesPackage{sprawozdanie-ato}
+
+\usepackage{polski}
+\usepackage{xltxtra}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{indentfirst}
+
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont{Charis SIL}
+\setmonofont[Scale=MatchLowercase]{Inconsolata}
+%\setsansfont[Scale=MatchLowercase]{Helvetica Neue}
+\onehalfspacing
+
+\definecolor{dkgreen}{rgb}{0.2,0.8,0.2}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  %firstnumber=1,
+  %stepnumber=5,
+  %numbersep=5pt,
+  tabsize=2,
+  breaklines=true,
+  breakatwhitespace=false,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=tb,
+  captionpos=b,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{mauve},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve}
+}
+
+\hypersetup{
+  unicode=true
+}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\newcommand{\bsd}{\textbf{FreeBSD}}
+\newcommand{\ssh}{\textbf{SSH}}
+\newcommand{\rdp}{\textbf{rdesktop}}
+\newcommand{\xbin}{\textbf{X}}
+\newcommand{\xvnc}{\textbf{Xvnc}}
+\newcommand{\wat}{\textbf{wat}}
+\newcommand{\volt}{\textbf{volt}}
