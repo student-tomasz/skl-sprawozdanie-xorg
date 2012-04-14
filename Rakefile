@@ -1,29 +1,28 @@
-$lc = "xelatex"
-$lf = "-interaction=nonstopmode"
+$document = 'sprawozdanie-xorg.pdf'
+$dependencies = %W{sprawozdanie-ato.sty}
+$byproducts = %w{*.out *.log *.aux *.toc}
 
-$exec = "sprawozdanie-xorg.pdf"
-$objs = %w{*.out *.log *.aux *.pdf *.toc}
+$lc = 'xelatex'
+$lf = '-interaction=nonstopmode'
 
-rule '.pdf' => '.tex' do |t|
-  2.times do
-    sh "#{$lc} #{$lf} #{t.source}"
-  end
+file $document => [$document.sub('.pdf', '.tex'), *$dependencies] do |t|
+  2.times { sh "#{$lc} #{$lf} #{t.prerequisites[0]} > /dev/null" }
 end
 
 task :default => :build
 
-task :build => $exec
+task :build => $document
 
-task :show => $exec do
-  os = if RUBY_PLATFORM.include? 'darwin' then :mac else :linux end
+task :show => $document do
+  os = case `uname`.strip when 'Darwin' then :mac else :linux end
   case os
   when :mac
-    sh "open #{$exec}"
+    sh "open #{$document}"
   else
-    sh "xpdf #{$exec} &"
+    sh "xpdf #{$document} &"
   end
 end
 
 task :clean do
-  $objs.each { |file| sh "rm -f #{file}" }
+  $byproducts.each { |file| sh "rm -f #{file}" }
 end
